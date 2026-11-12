@@ -8,7 +8,7 @@ from PyQt6.QtWidgets import (QComboBox, QHBoxLayout, QLabel, QListWidget, QMessa
                              QTabWidget, QVBoxLayout, QWidget)
 
 from hirou import anki, winaudio
-from hirou.cards import load_level, make_cards
+from hirou.cards import levels, load_level, make_cards
 from hirou.config import APP_NAME, SESSION_DIR, config, save_config
 from hirou.listen import load_lines
 
@@ -48,6 +48,7 @@ class Window(QWidget):
         self.lines = load_lines()
         self.tokenizer = None  # janome, loaded on first use
         self.cards, self.queue, self.known = [], [], []
+        self.levels_text = ''  # e.g. 'N3–N1': the levels the current cards were made for
         self.pending = 0
         self.build_when_idle = False
         self.told_about_tray = False
@@ -64,6 +65,11 @@ class Window(QWidget):
             self.level_box.addItem(f'N{n}', n)
         self.level_box.setCurrentIndex(max(0, self.level_box.findData(config.getint('level'))))
         self.level_box.currentIndexChanged.connect(self._level_changed)
+        self.range_box = QComboBox()
+        for text, scope in (('only', 'only'), ('and harder', 'harder'), ('and easier', 'easier')):
+            self.range_box.addItem(text, scope)
+        self.range_box.setCurrentIndex(max(0, self.range_box.findData(config['level_range'])))
+        self.range_box.currentIndexChanged.connect(self._level_changed)
         make_btn = QPushButton('Make flashcards')
         make_btn.clicked.connect(self.make_cards)
         clear_btn = QPushButton('Clear heard lines')
@@ -83,7 +89,7 @@ class Window(QWidget):
         target_row.addStretch()
 
         controls = QHBoxLayout()
-        for w in (self.listen_btn, QLabel('Level'), self.level_box, make_btn, clear_btn):
+        for w in (self.listen_btn, QLabel('Level'), self.level_box, self.range_box, make_btn, clear_btn):
             controls.addWidget(w)
         controls.addStretch()
 
@@ -257,6 +263,7 @@ class Window(QWidget):
 
     def _level_changed(self):
         config['level'] = str(self.level_box.currentData())
+        config['level_range'] = self.range_box.currentData()
         save_config()
 
     # ---- flashcards ----
@@ -264,24 +271,25 @@ class Window(QWidget):
         if self.pending:  # lines still being transcribed: build once they're in
             self.build_when_idle = True
             return
-        level = self.level_box.currentData()
+        ns = levels(self.level_box.currentData(), self.range_box.currentData())
         if self.tokenizer is None:
             from janome.tokenizer import Tokenizer
             self.tokenizer = Tokenizer()
-        self.cards = make_cards(self.tokenizer, [l['text'] for l in self.lines], load_level(level))
+        rows = [r for n in ns for r in load_level(n)]
+        self.cards = make_cards(self.tokenizer, [l['text'] for l in self.lines], rows)
+        self.levels_text = f'N{ns[0]}' + (f'–N{ns[-1]}' if len(ns) > 1 else '')
         self.queue, self.known = list(self.cards), []
         self.tabs.setCurrentIndex(1)
         self.show_card()
-        self.notify.emit(f'{len(self.cards)} N{level} flashcards ready')
+        self.notify.emit(f'{len(self.cards)} {self.levels_text} flashcards ready')
 
     def show_card(self):
         card = self.queue[0] if self.queue else None
-        level = self.level_box.currentData()
         self.answer.setVisible(False)
         self.card_buttons.setVisible(card is not None)
         self.anki_label.setText('')
-        self.freq_label.setText(f"heard {card['count']}×" if card else '')
-        self.count_label.setText(f'N{level} · {len(self.queue)} to learn · {len(self.known)} known' if self.cards else '')
+        self.freq_label.setText(f"N{card['level']} · heard {card['count']}×" if card else '')
+        self.count_label.setText(f'{self.levels_text} · {len(self.queue)} to learn · {len(self.known)} known' if self.cards else '')
         self.known_title.setText(f'Known ({len(self.known)})')
         self.known_list.clear()
         self.known_list.addItems(f"{k['key']} 【{k['reading']}】 {k['meaning']}  · heard {k['count']}×" for k in self.known)
@@ -318,10 +326,10 @@ class Window(QWidget):
         if not self.queue or self.queue[0].get('sent'):
             return
         card = self.queue[0]
-        line, deck, level = self.lines[card['line']], self.deck_box.currentText().strip() or 'HIROU', self.level_box.currentData()
+        line, deck = self.lines[card['line']], self.deck_box.currentText().strip() or 'HIROU'
         self.anki_btn.setEnabled(False)
         self.anki_label.setText('Sending to Anki…')
-        threading.Thread(target=lambda: self._anki_done.emit(card, *anki.add_card(card, line, deck, level)),
+        threading.Thread(target=lambda: self._anki_done.emit(card, *anki.add_card(card, line, deck)),
                          daemon=True, name='AnkiExport').start()
 
     def _on_anki_done(self, card, in_anki, message):

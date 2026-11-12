@@ -8,7 +8,7 @@ it's a companion to [ankipop](https://github.com/coatlesss/ankipop): it works th
 
 * **listens to one app:** pick the window you're watching in, and HIROU hears that app only, not discord or notification sounds. or pick **everything** to hear all your speakers play.
 * **writes it down as you go:** speech recognition runs locally with whisper (large-v3-turbo) on your gpu. a new line shows up about every 10 seconds.
-* **flashcards for your level:** pick n5 to n1. every word of that level that was heard becomes a card with its reading, meaning, the line it was heard in, and how many times it was heard. the most heard words come first.
+* **flashcards for your level:** pick n5 to n1, and **only** that level, or that level **and harder** (up to n1) or **and easier** (down to n5). every word of those levels that was heard becomes a card with its reading, meaning, the line it was heard in, and how many times it was heard. the most heard words come first.
 * **study until you know them:** **know** moves a card to the known list, **don't know** keeps it coming back. **quiz me again** starts over as often as you like.
 * **one key to anki:** cards go to the deck you pick, without duplicates.
 * **nothing recorded:** audio is only kept in memory until it's been turned into text. HIROU saves the text of what it heard and nothing else; no audio files, no screenshots.
@@ -85,6 +85,7 @@ cards use the `ankipop` note type (HIROU creates it if you don't have it): the w
 | `hotkey` | `alt+l` | start/stop listening, e.g. `ctrl+shift+l` or `f8` |
 | `listen_to` | (empty) | app to listen to, e.g. `chrome.exe`; empty = everything the speakers play |
 | `level` | `3` | jlpt level for the flashcards (5 = n5 ... 1 = n1) |
+| `level_range` | `only` | `only` that level, or with the levels `harder` (up to n1) or `easier` (down to n5) |
 | `deck` | `HIROU` | anki deck |
 | `model` | `large-v3-turbo` | whisper model; `small` is lighter but worse at japanese |
 

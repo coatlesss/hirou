@@ -20,13 +20,22 @@ def keys(expression: str) -> list[str]:
 def load_level(level: int) -> list[dict]:
     """The JLPT word list for N`level` (from github.com/jamsinclair/open-anki-jlpt-decks)."""
     with open(os.path.join(RESOURCES, 'jlpt', f'n{level}.csv'), encoding='utf-8-sig', newline='') as f:
-        return [{'word': r['expression'], 'reading': r['reading'], 'meaning': r['meaning']} for r in csv.DictReader(f)]
+        return [{'word': r['expression'], 'reading': r['reading'], 'meaning': r['meaning'], 'level': level}
+                for r in csv.DictReader(f)]
+
+
+def levels(level: int, scope: str) -> list[int]:
+    """N`level` alone ('only'), or with every harder level up to N1 ('harder') or easier one down to N5 ('easier')."""
+    return {'only': [level], 'harder': list(range(level, 0, -1)), 'easier': list(range(level, 6))}[scope]
 
 
 def make_cards(tokenizer, lines: list[str], rows: list[dict]) -> list[dict]:
     """One card per word from `rows` heard in `lines`, most heard first. Each card keeps the spelling that matched
     (`key`), how it was written in the line (`surface`) and the index of the first line it was heard in (`line`)."""
-    by_key = {k: r for r in rows for k in keys(r['word'])}
+    by_key = {}
+    for r in rows:  # a word on several lists keeps its first row: the chosen level is loaded first
+        for k in keys(r['word']):
+            by_key.setdefault(k, r)
     found = {}
     for i, line in enumerate(lines):
         for t in tokenizer.tokenize(line):

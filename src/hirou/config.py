@@ -19,6 +19,7 @@ _parser.read_dict({'HIROU': {
     'hotkey': 'alt+l',               # start/stop listening
     'listen_to': '',                 # app to listen to, e.g. chrome.exe ('' = everything the speakers play)
     'level': '3',                    # JLPT level the flashcards are made for (5 = N5 ... 1 = N1)
+    'level_range': 'only',           # only that level, or with the levels 'harder' (up to N1) or 'easier' (down to N5)
     'deck': 'HIROU',                 # Anki deck for "send to anki"
     'model': 'large-v3-turbo',       # faster-whisper model name
 }})

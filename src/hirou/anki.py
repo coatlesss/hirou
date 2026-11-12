@@ -54,7 +54,7 @@ def context_html(text: str, surface: str) -> str:
     return html.escape(text).replace(word, f'<b>{word}</b>', 1)
 
 
-def build_note(card: dict, line: dict, deck: str, level: int) -> dict:
+def build_note(card: dict, line: dict, deck: str) -> dict:
     word = card['key']
     note = {
         'deckName': deck,
@@ -66,18 +66,18 @@ def build_note(card: dict, line: dict, deck: str, level: int) -> dict:
             'Context': context_html(line['text'], card['surface']),
         },
         'options': {'allowDuplicate': False},
-        'tags': [APP_NAME, f'JLPT_N{level}'],
+        'tags': [APP_NAME, f"JLPT_N{card['level']}"],
     }
     return note
 
 
-def add_card(card: dict, line: dict, deck: str, level: int) -> tuple[bool, str]:
+def add_card(card: dict, line: dict, deck: str) -> tuple[bool, str]:
     """Adds `card` with the line it was heard in. Returns (in anki now, message to show). Blocks: call off the UI thread."""
     word = card['key']
     try:
         ensure_model()
         anki_request('createDeck', deck=deck)  # no-op if the deck exists
-        note = build_note(card, line, deck, level)
+        note = build_note(card, line, deck)
         if not anki_request('canAddNotes', notes=[note])[0]:
             return True, f'{word} is already in Anki'
         anki_request('addNote', note=note)
