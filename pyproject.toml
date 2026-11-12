@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hirou"
+version = "0.1.0"
+description = "Listens to the japanese your pc plays and makes jlpt flashcards from it"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "PyQt6>=6.9.1",
+    "pynput>=1.7.8",
+    "requests>=2.32.4",
+    "platformdirs",
+    "numpy",
+    "janome>=0.5",
+    "faster-whisper>=1.2",
+    "PyAudioWPatch>=0.2.12",
+    "nvidia-cublas-cu12",
+    "nvidia-cudnn-cu12==9.*",
+]
+
+[project.scripts]
+hirou = "hirou.main:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["hirou*"]
+
+[tool.setuptools.package-data]
+hirou = ["resources/*.ico", "resources/jlpt/*.csv"]
