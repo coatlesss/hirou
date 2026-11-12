@@ -25,8 +25,8 @@ it's a companion to [ankipop](https://github.com/coatlesss/ankipop): it works th
 ### run from source
 
 ```bash
-git clone https://github.com/coatlesss/mirou.git
-cd mirou
+git clone https://github.com/coatlesss/hirou.git
+cd hirou
 python -m venv .venv
 .venv\Scripts\activate
 pip install -e .
